@@ -1,16 +1,16 @@
 # %%
+import sys
+
+import matplotlib.pyplot as plt
+import maxent_word2vec as mwvec
 import numpy as np
 import pandas as pd
-from scipy import sparse
-import sys
 import seaborn as sns
-import matplotlib.pyplot as plt
-from tqdm import tqdm
 from maxent_word2vec.datasets.GraphDataset import GraphDataset
 from maxent_word2vec.models.SemAxisOffsetModel import SemAxisOffsetModel
 from maxent_word2vec.models.word2vec import SGNSWord2Vec
-import pandas as pd
-import maxent_word2vec as mwvec
+from scipy import sparse
+from tqdm import tqdm
 
 node_table_file = "node_table.csv"
 citation_net_file = "net.npz"
@@ -115,13 +115,14 @@ emb2 = SGNSWord2Vec(offset_model=offset_model, cuda=False).fit(dataset).transfor
 #
 plot(emb2)
 
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import cross_val_score
+
 # %%
 #
 # Test the class predictions
 #
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.model_selection import cross_val_score
-from sklearn.linear_model import LogisticRegression
 
 labels = np.unique(node_table["journal_code"].values, return_inverse=True)[1]
 # clf = KNeighborsClassifier(n_neighbors=10)
