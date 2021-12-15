@@ -1,0 +1,219 @@
+\documentclass[12pt]{article} %{{{
+\usepackage[margin=1in]{geometry}
+
+% Figures
+\usepackage{graphicx}
+\graphicspath{{../../figs/}}
+
+% Math
+\usepackage{amsmath}
+\usepackage{amssymb}
+\DeclareMathOperator*{\argmin}{\arg\!\min}
+\DeclareMathOperator*{\argmax}{\arg\!\max}
+
+% abbreviations
+\def\eg{e.g.,~}
+\def\ie{i.e.,~}
+\def\cf{cf.\ }
+\def\viz{viz.\ }
+\def\vs{vs.\ }
+
+% Refs
+\usepackage{biblatex}
+\addbibresource{main.bib}
+
+\usepackage{url}
+
+\newcommand{\secref}[1]{Section~\ref{sec:#1}}
+\newcommand{\figref}[1]{Fig.~\ref{fig:#1}}
+\newcommand{\tabref}[1]{Table~\ref{tab:#1}}
+%\newcommand{\eqnref}[1]{\eqref{eq:#1}}
+%\newcommand{\thmref}[1]{Theorem~\ref{#1}}
+%\newcommand{\prgref}[1]{Program~\ref{#1}}
+%\newcommand{\algref}[1]{Algorithm~\ref{#1}}
+%\newcommand{\clmref}[1]{Claim~\ref{#1}}
+%\newcommand{\lemref}[1]{Lemma~\ref{#1}}
+%\newcommand{\ptyref}[1]{Property~\ref{#1}}
+
+% for quick author comments
+\usepackage[usenames,dvipsnames,svgnames,table]{xcolor}
+\definecolor{light-gray}{gray}{0.8}
+\def\del#1{ {\color{light-gray}{#1}} }
+\def\yy#1{\footnote{\color{red}\textbf{yy: #1}} }
+
+%}}}
+
+\begin{document} %{{{
+
+\title{Models of random embeddings based on the maximum entropy principle} %{{{
+\date{\today}
+\maketitle %}}}
+
+\section{Models of random embeddings}
+\subsection{Problem setting}
+
+Given a $d$-dimensional embedding of $N$ points represented by $x_1, \ldots, x_N$, generate a randomized embedding $\tilde x_i, \ldots, \tilde x_N$ such that
+\begin{enumerate}
+\item the length of individual vectors is preserved (i.e., $||x_i||_F = ||\tilde x_i||_F$),
+\item the similarity to a basis vector $z_i$ is preserved (i.e., $x_i ^\top z = \tilde x_i ^\top z$, and $||z_i||_F = 1$).
+\end{enumerate}
+
+\subsubsection*{Example}
+Suppose that we have an embedding of $N$ words. This embedding reflects a gender bias, meaning that the embedding has a spectrum of words from man to woman along an axis $z_i$. We want to randomize the embedding while preserving this man-vs-woman spectrum.
+
+\subsubsection*{Motivation}
+With a model of random embeddings that preserves a specified spectrum, we plug it into residual2vec to remove the spectrum from the embedding. The key advantage over our previous approach (based on random graphs) is that (i) while previous approach requires discrete labels for all nodes to generate random graphs, this approach requires labels for a subset of data points to define an axis $z$, and (ii) the null models can be agonistic to the type of data.
+
+\subsection{Approach}
+
+Our aim is to find a probability distribution $P(X)$ over an embedding of $N$ points
+$\tilde X = [\tilde x_1, \ldots, \tilde x_N]$ that preserves the norm $||x_i||_F = ||\tilde x_i||_F$ and dot-similarity $x_i \top z = \tilde x_i ^\top z$  with the original data $X = [x_1, \ldots, x_N]$. This problem can be formulated as the following optimization problem. We seek a distribution $P(X)$ that maximizes a randomness measured by entropy
+
+\begin{align}
+-\int P(\tilde X) \ln P(\tilde X) {\rm d}{\tilde X} \label{eq:entropy}
+\end{align}
+such that
+\begin{align}
+\int \tilde x_i ^\top \tilde x_i P(\tilde X){\rm d}\tilde X= x_i ^\top x_i, \label{eq:const_length}\\
+\int \tilde x_i ^\top z P(\tilde X){\rm d}\tilde X= x_i ^\top z. \label{eq:const_dotsim}
+\end{align}
+The Lagrangian for Eqs.~\eqref{eq:entropy}--\eqref{eq:const_dotsim} is given by
+\begin{align}
+J &:= -\int P(\tilde X) \ln P(\tilde X) {\rm d}{\tilde X} \nonumber \\
+  &+ \frac{1}{2}\sum_{i=1}^N \alpha_i \left[ x_i ^\top x_i - \int \tilde x_i ^\top \tilde x_i P(\tilde X){\rm d}\tilde X\right] \nonumber \\
+  & + \sum_{i=1}^N \beta_i \left[ x_i ^\top z - \int \tilde x_i ^\top zP(\tilde X){\rm d}\tilde X) \right] \nonumber \\
+  &+ \gamma \left(1-\int P(\tilde X){\rm d}\tilde X\right),
+\end{align}
+where $\alpha_i, \beta_i$ and $\gamma$ are the Lagrangian multiplier for constraints Eqs.~\eqref{eq:const_length} and \eqref{eq:const_dotsim} and $\int P(\tilde X) {\rm d}\tilde X = 1$, respectively.
+By taking the functional derivative with respect to $P(\tilde X)$, we have
+\begin{align}
+\frac{\partial J}{\partial P(\tilde X)} =  -\ln P(\tilde X) - \frac{1}{2}\sum_{i=1}^N \alpha_i \tilde x_i ^\top \tilde x_i  - \sum_{i=1}^N \beta_i \tilde x_i ^\top z + \text{const}.
+\end{align}
+By setting $\frac{\partial J}{\partial P(\tilde X)} = 0$, we have the distribution for randomized data $\tilde X$:
+\begin{align}
+P(\tilde X) =\prod_i \frac{1}{Z(\alpha, \beta, \gamma)} \exp\left[-\frac{1}{2}\alpha_i \tilde x_i ^\top \tilde x_i  - \beta_i \tilde x_i ^\top z \right], \label{eq:dist}
+\end{align}
+where $Z(\alpha, \beta, \gamma)$ is the normalization constant.
+
+What is this distribution? To see this, let us rewrite Eq. (4) as
+\begin{align}
+P(\tilde X) &=\prod_i \frac{1}{Z(\alpha_i, \beta_i, \gamma)} \exp\left[
+-\frac{\alpha_i}{2} \left( \tilde x_i - \frac{-\beta_i}{\alpha_i} z\right)^2
+\right]\exp\left(\frac{\beta_i ^2 z^2}{2\alpha_i}\right) \nonumber \\
+& =\prod_i \frac{1}{Z'(\alpha, \beta, \gamma)} \exp\left[
+-\frac{1}{2(1/\alpha_i)} \left( \tilde x_i - \frac{-\beta_i}{\alpha_i} z\right)^2
+\right], \label{eq:dist_rewrite}
+\end{align}
+where we have defined $Z(\alpha,\beta,\gamma )= Z(\alpha,\beta,\gamma )\exp\left(-\beta_i ^2 z^2 / 2\alpha_i\right)$.
+Equation~\eqref{eq:dist_rewrite} makes clear that (i) each point $\tilde x_i$ is independent of each other, and (ii) follows a multivariate gaussian distribution with mean  $-(\beta_i/\alpha_i) z$ located along basis $z$ and covariance $\alpha^{-1} _i{\bf I}$. To make this point more explicit, we reparameterize $\alpha_i$ and $\beta_i$ by
+\begin{align}
+\sigma^2 _i:= 1/\alpha \quad s_i:= \frac{\beta_i}{\alpha_i}, \label{eq:reparameterize}
+\end{align}
+with which we rewrite Eq.~\eqref{eq:dist_rewrite} as
+\begin{align}
+P(\tilde X)=\prod_i \frac{1}{Z'(\sigma,s, \gamma)} \exp\left[
+-\frac{1}{2\sigma_i ^2} \left( \tilde x_i - s_i z \right)^2
+\right]. \label{eq:dist_rewrite_reparam}
+\end{align}
+By exploiting the fact that the normalization constant for a multivariate gaussian with covariance $C$ is given by $(2 \pi)^{d/2} \det(C)^{d/2}$, we have
+\begin{align}
+Z'(\sigma_i, s_i, \gamma) = (2 \pi )^{d/2} \sigma^d \label{eq:norm}
+\end{align}
+By putting Eqs.~\eqref{eq:dist_rewrite_reparam} and \eqref{eq:norm} together, we have
+\begin{align}
+P(\tilde X) =\prod_i \frac{1}{(2 \pi)^{d/2}\sigma^d _i} \exp\left[
+-\frac{1}{2\sigma^2 _i} \left( \tilde x_i - s_i z\right)^2
+\right].
+\end{align}
+We find the parameters $s_i$ and $\sigma_i$ by maximizing the likelihood $\log P(X)$, i.e.,
+\begin{align}
+\log P(X) &= \sum_{i=1}^N \left[ -d\log \sigma_i  - \frac{d}{2}\log 2\pi -\frac{1}{2\sigma^2} \left( x_i - s_i z \right)^2 \right] \nonumber \\
+& = \sum_{i=1}^N\left[-d\log \sigma_i -\frac{d}{2}\log 2\pi - \frac{1}{2\sigma^2} x_i^\top x_i  + \frac{s_i z^\top x_i}{\sigma^2} - \frac{s_i ^2 z^\top z}{2\sigma^2}\right].
+\end{align}
+The maximizers can be derived by taking a derivative with respect to $\beta_i$ and $\sigma_i$ and setting them to zero, i.e.,
+
+\begin{align}
+\frac{\partial}{\partial \sigma_i } \log P(X) &=
+-\frac{d}{\sigma} + \frac{1}{\sigma^3}x_i^\top x_i -2 \frac{s_i z^\top x_i}{\sigma^3} + \frac{s_i ^2 z^\top z}{\sigma^3} = 0 \label{eq:d_const_1} \\
+\frac{\partial}{\partial s_i } \log P(X) &= \frac{z^\top x_i}{\sigma^2} - \frac{s_i z^\top z}{\sigma^2} = 0 \label{eq:d_const_2}
+\end{align}
+Substituting $z_i^\top z_i = 1$ into Eq. (19), we have
+\begin{align}
+s_i = x_i ^\top z,
+\end{align}
+with which we rewrite Eq.~\eqref{eq:d_const_1} as
+\begin{align}
+\sigma^2 = \frac{1}{d}\left(x_i^\top x_i -(x_i ^\top z)^2\right).
+\end{align}
+
+\subsection{In-vector and Out-vector}
+When randomizing embeddings, randomize both the in-vector and out-vector, i.e., find bases $z_{\text{in}}$ and $z_{\text{out}}$ for the in-vector and out-vector, respectively, and find the paramters
+\begin{align}
+s_{\text{in},i} &= x_{\text{in}, i} ^\top z_{\text{in}}, \\
+\sigma^2 _{\text{in}, i} &= \frac{1}{d}\left(x_{\text{in}, i}^\top x_{\text{in}, i} -(x_{\text{in}, i} ^\top z_{\text{in}})^2\right). \\
+s_{\text{out},i} &= x_{\text{out}, i} ^\top z_{\text{out}}, \\
+\sigma^2 _{\text{out}, i} &= \frac{1}{d}\left(x_{\text{out}, i}^\top x_{\text{out}, i} -(x_{\text{out}, i} ^\top z_{\text{out}})^2\right)
+\end{align}
+
+
+\subsection{Properties}
+1. The expected dot-similarity for two points $i$ and $j$ is given by
+\begin{align}
+\mathbb{E}[\tilde x_i^\top \tilde x_j] = s_i z^\top (s_j z) = s_i s_j
+\end{align}
+2. The conditional probability $P(j \vert i)$ is given by
+\begin{align}
+P(j \vert i) = \frac{\exp(s_{\text{in}, i}s_{\text{out}, j})}{\sum_{j'}\exp(s_{\text{in},i}s_{\text{out}, j'})}
+\end{align}
+
+
+\subsection{Debiasing with residual2vec}
+
+residual2vec models the conditional probability by
+\begin{align}
+P(j\vert i) = \frac{1}{Z}P_0(i \vert j)\exp(u_i ^\top v_j) \label{eq:residual2vec}
+\end{align}
+Here, we can use the randomized embedding as the baseline $P_0(j\vert i)$. A problem is that sampling instances from $P_0(j\vert i)$ is computationally demanding as it is a soft-max function. We address this problem by taking advantage of negative sampling.
+
+Negative sampling effectively negates the bias in the word frequencies in a given dataset. Debiasing frequency bias would be also useful for the debiased embedding we aim to generate. Therefore, we aim to remove biases appears in an axis $z$ as well as the word frequency by using the following noise distribution:
+\begin{align}
+P_0(j \vert i) = \frac{1}{Z'}P(j)\exp(s_{\text{in},i}s_{\text{out}, j}),
+\end{align}
+where $Z'$ is the normalization constant. By plugging this into residual2vec, we have
+\begin{align}
+P(j\vert i) = \frac{1}{Z}P(j)\exp(s_{\text{in},i}s_{\text{out}, j})\exp(u_i ^\top v_j), \label{eq:residual2vec_expanded}
+\end{align}
+where we redefined $Z$ to normalize the probability. By rewriting Eq.~\eqref{eq:residual2vec_expanded} we have,
+\begin{align}
+P(j\vert i) = \frac{1}{Z}P(j)\exp(u_i ^\top v_j + s_{\text{in},i}s_{\text{out}, j}). \label{eq:residual2vec_expanded_2}
+\end{align}
+Equation~\eqref{eq:residual2vec_expanded_2} makes clear that we can avoid computing the normalization constant by taking advantage of negative sampling: training Eq.~\eqref{eq:residual2vec_expanded_2} is equivalent to training a shifted word2vec model
+\begin{align}
+P(j\vert i) \propto \exp(u_i ^\top v_j + s_{\text{in},i}s_{\text{out}, j}),
+\end{align}
+using the negative sampling with noise distribution $P(j)$.
+
+\section{Proof of concept}
+(Fig~\ref{fig:residual2vec_example})
+
+\begin{figure}[h]
+\begin{center}
+\includegraphics[width=0.9\textwidth]{../../figs/proof-of-concept-aps}
+\end{center}
+\caption{
+    As a proof of concept, I embed a citation network of journals constructed from the American Physical Society dataset.
+    Each node is a journal-year pair, and each edge is undirected and weighted by the number of citations.
+    {\bf A, B} Embedding using residual2vec with the configuration model as the null model. There is a spectrum from old to new journals in the embedding, reflecting the temporal structure of the citation network.
+    {\bf C, D} The embedding after debiasing based on the proposed maximum entropy approach. To remove the spectrum pertained to time, I first find a sem-axis from old to new journals by the 30 newest and oldest journals. Then, I use this sem-axis as $z$. The debiased embedding has no clear temporal spectrum and delineates the clusters more clearly.
+    In addition to qualitative assessment, I quantify the separation of clusters by performing a label classification task. I used a Logistic regression model in the one-vs-rest setting, and perform the 10-cross validation. The macro-$F_1$ score for the original embedding is 0.81, while the macro-$F_1$ score for the debiased embedding is 0.85.
+}
+\label{fig:residual2vec_example}
+\end{figure}
+
+
+
+
+
+\printbibliography{}
+
+\end{document} %}}}
