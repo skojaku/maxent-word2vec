@@ -6,7 +6,8 @@ Bias-aware word2vec based on the maximum entropy principle
 from maxent_word2vec.datasets.GraphDataset import GraphDataset
 from maxent_word2vec.models.SemAxisOffsetModel import SemAxisOffsetModel
 from maxent_word2vec.models.word2vec import SGNSWord2Vec
-import maxent_word2vec as mwvec
+import netowrkx as nx
+import numpy as np
 
 #
 # Input
