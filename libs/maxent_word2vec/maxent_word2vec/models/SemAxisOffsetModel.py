@@ -33,7 +33,6 @@ class SemAxisOffsetModel:
             # append for the case of unknown word
         )
         self.sem_axis = torch.from_numpy(sem_axis)
-        print(self.offset_score)
         return self
 
     def forward(self, iword, owords):
