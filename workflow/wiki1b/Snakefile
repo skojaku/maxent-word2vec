@@ -1,0 +1,55 @@
+from os.path import join as j
+
+
+configfile: "../config.yaml"
+
+
+#
+# Directories
+#
+DATA_DIR = j("../", config["data_dir"])
+
+WIKI1B_DATA_DIR = j(DATA_DIR, "wiki1b")  # overwride the working directory
+
+# ==================
+# Source
+# ==================
+WIKI1B_DATA_SRC = j(DATA_DIR, "wiki1b", "source", "enwik9.txt")
+
+
+# ==================
+# Preprocessed files
+# ==================
+WIKI1B_DATA_SRC_CLEANED = j(DATA_DIR, "wiki1b", "preprocessed", "supp", "cleaned_enwik9.txt")
+WIKI1B_TOKEN_TABLE = j(DATA_DIR, "wiki1b", "preprocessed", "token_table.csv")
+WIKI1B_TOKENED_CORPUS = j(DATA_DIR, "wiki1b", "preprocessed", "tokenized_corpus.txt")
+
+
+rule all:
+    input:
+        WIKI1B_TOKENED_CORPUS,
+        WIKI1B_TOKEN_TABLE
+
+
+rule download:
+    output:
+        WIKI1B_DATA_SRC
+    shell:
+        "wget -qO- http://mattmahoney.net/dc/enwik8.zip | zcat >> {output}"
+
+rule clean_data:
+    input:
+        WIKI1B_DATA_SRC
+    output:
+        WIKI1B_DATA_SRC_CLEANED
+    shell:
+        "perl workflow/wikifil.pl {input} > {output}"
+
+rule tokenize:
+    input:
+        input_file = WIKI1B_DATA_SRC_CLEANED
+    output:
+        token_table = WIKI1B_TOKEN_TABLE,
+        tokenized_corpus = WIKI1B_TOKENED_CORPUS
+    script:
+        "workflow/tokenize.py"
