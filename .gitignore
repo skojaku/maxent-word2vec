@@ -96,3 +96,17 @@ docs/_build/
 
 # PyBuilder
 target/
+# Figures
+*.pdf
+*.png
+
+# Intermediate binary data
+*.pickle
+data/aps
+data/aps-journals-embeddings
+data/lfr-benchmark
+data/link-prediction
+data/mag
+data/sbm-trans-prob-approx
+.vscode/settings.json
+log
