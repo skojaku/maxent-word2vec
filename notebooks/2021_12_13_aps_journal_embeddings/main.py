@@ -14,18 +14,18 @@ from tqdm import tqdm
 
 node_table_file = "node_table.csv"
 citation_net_file = "net.npz"
+dim = 3
 
 node_table = pd.read_csv(node_table_file)
 net = sparse.load_npz(citation_net_file)
 A = net + net.T
 A.eliminate_zeros()
 
-
 # %%
 # Create an embedding using the node2vec
 #
 dataset = mwvec.GraphDataset(A, num_walks=10, window_length=3, walk_length=80)
-emb = SGNSWord2Vec(cuda=True).fit(dataset).transform(dim=3)
+emb = SGNSWord2Vec(cuda=True).fit(dataset).transform(dim=dim)
 
 
 # %%
@@ -94,8 +94,8 @@ def plot(emb):
     return fig, axes
 
 
-plot(emb)
-
+fig, axes = plot(emb)
+fig.savefig("original.pdf", bbox_inches="tight", dpi=300)
 # %%
 #
 # Train the offset models
@@ -107,13 +107,16 @@ right = node_ids[-topk:]
 X_train = emb[np.concatenate([left, right]), :]
 Y_train = np.concatenate([np.zeros_like(left), np.ones_like(right)])
 offset_model = SemAxisOffsetModel().fit(X_train, Y_train, emb)
-emb2 = SGNSWord2Vec(offset_model=offset_model, cuda=False).fit(dataset).transform(dim=3)
+emb2 = (
+    SGNSWord2Vec(offset_model=offset_model, cuda=False).fit(dataset).transform(dim=dim)
+)
 
 # %%
 #
 # Visualize the debiased embeddings
 #
-plot(emb2)
+fig, axes = plot(emb2)
+fig.savefig("debiased.pdf", bbox_inches="tight", dpi=300)
 
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import cross_val_score
@@ -136,8 +139,15 @@ df = pd.concat(
         pd.DataFrame({"model": "debiased", "score": scores2}),
     ]
 )
-ax = sns.barplot(x="model", y="score", data=df)
+# %%
+sns.set_style("white")
+sns.set(font_scale=1.2)
+sns.set_style("ticks")
+fig, ax = plt.subplots(figsize=(4, 4.5))
+
+ax = sns.barplot(x="model", y="score", data=df, ax=ax)
 sns.despine()
 ax.set_ylabel("Macro F1-score (Journal prediction)")
-
+fig.savefig("predictions.pdf", bbox_inches="tight", dpi=300)
 # %%
+np.mean(scores), np.mean(scores2)
