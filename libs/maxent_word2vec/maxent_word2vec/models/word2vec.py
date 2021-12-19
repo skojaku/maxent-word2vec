@@ -15,12 +15,7 @@ class SGNSWord2Vec:
     """
 
     def __init__(
-        self,
-        batch_size=256,
-        cuda=False,
-        buffer_size=100000,
-        miniters=200,
-        offset_model=None,
+        self, batch_size=256, cuda=False, miniters=200, offset_model=None,
     ):
         """
         :param batch_size: Number of batches for the SGD, defaults to 4
@@ -32,7 +27,6 @@ class SGNSWord2Vec:
         """
         self.cuda = cuda
         self.batch_size = batch_size
-        self.buffer_size = buffer_size
         self.miniters = miniters
         self.offset_model = offset_model
 

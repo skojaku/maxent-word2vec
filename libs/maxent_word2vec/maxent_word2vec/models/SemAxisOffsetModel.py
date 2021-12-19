@@ -4,7 +4,8 @@ from scipy import sparse
 
 
 class SemAxisOffsetModel:
-    def __init__(self):
+    def __init__(self, cuda=False):
+        self.cuda = cuda
         pass
 
     def fit(self, X_train, Y_train, X):
@@ -33,7 +34,12 @@ class SemAxisOffsetModel:
             # append for the case of unknown word
         )
         self.sem_axis = torch.from_numpy(sem_axis)
+        if self.cuda:
+            self.offset_score = self.offset_score.cuda()
         return self
+
+    def get_semaxis(self):
+        return self.offset_score[:-1].copy().cpu().detach().numpy()
 
     def forward(self, iword, owords):
         return self.offset_score[owords] * self.offset_score[iword, None]
