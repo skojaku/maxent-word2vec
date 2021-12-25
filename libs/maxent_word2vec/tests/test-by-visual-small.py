@@ -7,6 +7,7 @@ import networkx as nx
 import numpy as np
 from maxent_word2vec.datasets.GraphDataset import GraphDataset
 from maxent_word2vec.models.SemAxisOffsetModel import SemAxisOffsetModel
+from maxent_word2vec.models.MaxEntModel import MaxEntModel
 from maxent_word2vec.models.word2vec import SGNSWord2Vec
 import pandas as pd
 
@@ -23,12 +24,17 @@ dataset = mwvec.GraphDataset(A, num_walks=10, window_length=5, walk_length=50)
 emb = SGNSWord2Vec().fit(dataset).transform(dim=32)
 
 left = np.array([32, 33])
+middle = np.array([12, 13])
 right = np.array([1, 0, 2])
-X_train = emb[np.concatenate([left, right]), :]
-Y_train = np.concatenate([np.zeros_like(left), np.ones_like(right)])
-offset_model = SemAxisOffsetModel().fit(X_train, Y_train, emb)
+X_train = emb[np.concatenate([left, right, middle]), :]
+Y_train = np.concatenate(
+    [np.zeros_like(left), np.ones_like(right), np.ones_like(middle) * 2]
+)
+offset_model = MaxEntModel().fit(X_train, Y_train, emb)
+# offset_model = SemAxisOffsetModel().fit(X_train, Y_train, emb)
 emb2 = SGNSWord2Vec(offset_model=offset_model).fit(dataset).transform(dim=2)
-
+# %%
+offset_model.Z
 # %%
 #
 # Prep plot data
